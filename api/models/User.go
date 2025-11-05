@@ -52,6 +52,20 @@ func TryFindUserByUsername(ctx context.Context, username string) (*AppUser, bool
 	}, true
 }
 
+func SearchUsersByUsername(ctx context.Context, query string) ([]dto.User, error) {
+	var (
+		tx    = data.GetTransaction(ctx)
+		users []dto.User
+	)
+
+	err := tx.Where("username LIKE ?", "%"+query+"%").Find(&users).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
 func RegisterNewAppUser(ctx context.Context, newUser *dto.User) error {
 	hashedPasswd, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), 10)
 	if errors.Is(err, bcrypt.ErrPasswordTooLong) {

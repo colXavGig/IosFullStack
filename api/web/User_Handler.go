@@ -18,6 +18,34 @@ func HandleRegisterUser(w http.ResponseWriter, r *http.Request) {
 	).Complete(http.HandlerFunc(createUser)).ServeHTTP(w, r)
 }
 
+func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
+	Chain(
+		RecoveryFromPanic,
+		StartGormTransaction,
+	).Complete(http.HandlerFunc(authentifyUser)).ServeHTTP(w, r)
+}
+
+func HandleGetUserInfo(w http.ResponseWriter, r *http.Request) {
+	Chain(
+		RecoveryFromPanic,
+		StartGormTransaction,
+	).Complete(http.HandlerFunc(getUserByUsername)).ServeHTTP(w, r)
+}
+
+func HandleSetNewPassword(w http.ResponseWriter, r *http.Request) {
+	Chain(
+		RecoveryFromPanic,
+		StartGormTransaction,
+	).Complete(http.HandlerFunc(updatePasswd)).ServeHTTP(w, r)
+}
+
+func HandleSearchUser(w http.ResponseWriter, r *http.Request) {
+	Chain(
+		RecoveryFromPanic,
+		StartGormTransaction,
+	).Complete(http.HandlerFunc(searchUser)).ServeHTTP(w, r)
+}
+
 func createUser(w http.ResponseWriter, r *http.Request) {
 	var (
 		userInfo *dto.User
@@ -59,13 +87,6 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, cookie)
-}
-
-func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
-	Chain(
-		RecoveryFromPanic,
-		StartGormTransaction,
-	).Complete(http.HandlerFunc(authentifyUser)).ServeHTTP(w, r)
 }
 
 func authentifyUser(w http.ResponseWriter, r *http.Request) {
@@ -116,13 +137,6 @@ func authentifyUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func HandleGetUserInfo(w http.ResponseWriter, r *http.Request) {
-	Chain(
-		RecoveryFromPanic,
-		StartGormTransaction,
-	).Complete(http.HandlerFunc(getUserByUsername)).ServeHTTP(w, r)
-}
-
 func getUserByUsername(w http.ResponseWriter, r *http.Request) {
 	var (
 		ctx      context.Context = r.Context()
@@ -164,13 +178,6 @@ func getUserByUsername(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func HandleSetNewPassword(w http.ResponseWriter, r *http.Request) {
-	Chain(
-		RecoveryFromPanic,
-		StartGormTransaction,
-	).Complete(http.HandlerFunc(updatePasswd)).ServeHTTP(w, r)
-}
-
 func updatePasswd(w http.ResponseWriter, r *http.Request) {
 	var (
 		userFromCtx *models.AppUser
@@ -203,6 +210,42 @@ func updatePasswd(w http.ResponseWriter, r *http.Request) {
 
 	if err = userFromCtx.UpdatePassword(ctx, newPasswd); err != nil {
 		httpStatus = http.StatusInternalServerError
+		return
+	}
+}
+
+func searchUser(w http.ResponseWriter, r *http.Request) {
+	var (
+		ctx     = r.Context()
+		query   string
+		users   []dto.User
+		httpErr *HttpError = nil
+	)
+
+	defer func() {
+		if httpErr != nil {
+			_ = JsonResponseWriter(w, httpErr)
+		}
+	}()
+
+	query = r.PathValue("query")
+
+	users, err := models.SearchUsersByUsername(ctx, query)
+	if err != nil {
+		httpErr = &HttpError{
+			Code:    http.StatusInternalServerError,
+			Message: "Error searching users",
+			Details: err.Error(),
+		}
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(users); err != nil {
+		httpErr = &HttpError{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+			Details: fmt.Sprintf("error encoding users"),
+		}
 		return
 	}
 }

@@ -1,9 +1,3 @@
-//
-//  Item.swift
-//  FullStackClient
-//
-//  Created by Xavier Giguerre on 2025-11-02.
-//
 
 import Foundation
 import SwiftData
