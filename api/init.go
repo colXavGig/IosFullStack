@@ -7,11 +7,9 @@ import (
 
 func init() {
 	data.AddModelsToGormSetUp(
-		dto.User{},
-		dto.Conversation{},
-		dto.Message{},
+		&dto.User{},
+		&dto.Conversation{},
+		&dto.Message{},
 	)
-
 	data.MightInitDB()
-
 }

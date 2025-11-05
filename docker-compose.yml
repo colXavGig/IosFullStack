@@ -1,0 +1,26 @@
+
+version: '3.8'
+
+services:
+  postgresql:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: gorm
+      POSTGRES_PASSWORD: gorm
+      POSTGRES_DB: gorm
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+  api:
+    pull_policy: build
+    build:
+      context: ./api
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgresql
+
+volumes:
+  postgres_data:

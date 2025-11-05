@@ -9,12 +9,12 @@ import (
 )
 
 const (
-	dataSourceName string = "host=postgresql user=gorm password=gorm dbname=gorm port=5432 sslmode=disable TimeZone=America/Toronto"
+	dataSourceName string = "host=postgresql user=gorm password=gorm dbname=gorm port=5432 sslmode=disable"
 )
 
 var (
 	db     *gorm.DB = nil
-	models []any    = make([]any, 5)
+	models []any
 )
 
 func MightInitDB() {
@@ -29,7 +29,11 @@ func MightInitDB() {
 		panic("db do not want to talk with you")
 	}
 
-	log.Fatalln(db.AutoMigrate(models...))
+	log.Println("migrating...")
+	err = db.AutoMigrate(models...)
+	if err != nil {
+		panic("cant migrate")
+	}
 }
 
 func GetGormDB() (*gorm.DB, error) {
@@ -40,8 +44,8 @@ func GetGormDB() (*gorm.DB, error) {
 	return db, nil
 }
 
-func AddModelsToGormSetUp(new_models ...any) {
-	models = append(models, new_models...)
+func AddModelsToGormSetUp(newModels ...any) {
+	models = append(models, newModels...)
 }
 
 func CloseGormDB() {
